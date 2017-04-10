@@ -8,6 +8,7 @@
 
 import UIKit
 import MapKit
+import CoreData
 
 class MapVC: UIViewController, MKMapViewDelegate {
     
@@ -17,6 +18,7 @@ class MapVC: UIViewController, MKMapViewDelegate {
         super.viewDidLoad()
         mapView.delegate = self
         loadLastMapView()
+        longPressRecognizerSetup()
     }
     
     func loadLastMapView() {
@@ -34,6 +36,24 @@ class MapVC: UIViewController, MKMapViewDelegate {
         UserDefaults.standard.set(mapView.region.center.longitude as Double, forKey: "mapLongitude")
         UserDefaults.standard.set(mapView.region.span.latitudeDelta as Double, forKey: "mapLatitudeDelta")
         UserDefaults.standard.set(mapView.region.span.longitudeDelta as Double, forKey: "mapLongitudeDelta")
+    }
+    
+    func longPressRecognizerSetup() {
+        let longPressRecogniser = UILongPressGestureRecognizer(target: self, action: #selector(self.handleLongPress(_:)))
+        longPressRecogniser.minimumPressDuration = 1.0
+        mapView.addGestureRecognizer(longPressRecogniser)
+    }
+    
+    func handleLongPress(_ getstureRecognizer : UIGestureRecognizer){
+        if getstureRecognizer.state != .began { return }
+        
+        let touchPoint = getstureRecognizer.location(in: mapView)
+        let touchMapCoordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
+        
+        
+        let anno = MKPointAnnotation()
+        anno.coordinate = touchMapCoordinate
+        mapView.addAnnotation(anno)
     }
 }
 

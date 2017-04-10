@@ -17,6 +17,11 @@
 		303B93681E9B4F9B00E6D365 /* WebClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B93671E9B4F9B00E6D365 /* WebClient.swift */; };
 		303B936A1E9B72E100E6D365 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B93691E9B72E100E6D365 /* Constants.swift */; };
 		303B936C1E9B72F800E6D365 /* Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B936B1E9B72F800E6D365 /* Helper.swift */; };
+		303B93791E9B853100E6D365 /* CoreDataStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B93781E9B853100E6D365 /* CoreDataStack.swift */; };
+		303B937E1E9B856600E6D365 /* Photo+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B937A1E9B856600E6D365 /* Photo+CoreDataClass.swift */; };
+		303B937F1E9B856600E6D365 /* Photo+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B937B1E9B856600E6D365 /* Photo+CoreDataProperties.swift */; };
+		303B93801E9B856600E6D365 /* Pin+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B937C1E9B856600E6D365 /* Pin+CoreDataClass.swift */; };
+		303B93811E9B856600E6D365 /* Pin+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B937D1E9B856600E6D365 /* Pin+CoreDataProperties.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +37,11 @@
 		303B93671E9B4F9B00E6D365 /* WebClient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebClient.swift; sourceTree = "<group>"; };
 		303B93691E9B72E100E6D365 /* Constants.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		303B936B1E9B72F800E6D365 /* Helper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helper.swift; sourceTree = "<group>"; };
+		303B93781E9B853100E6D365 /* CoreDataStack.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataStack.swift; sourceTree = "<group>"; };
+		303B937A1E9B856600E6D365 /* Photo+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Photo+CoreDataClass.swift"; path = "../Photo+CoreDataClass.swift"; sourceTree = "<group>"; };
+		303B937B1E9B856600E6D365 /* Photo+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Photo+CoreDataProperties.swift"; path = "../Photo+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		303B937C1E9B856600E6D365 /* Pin+CoreDataClass.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Pin+CoreDataClass.swift"; path = "../Pin+CoreDataClass.swift"; sourceTree = "<group>"; };
+		303B937D1E9B856600E6D365 /* Pin+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = "Pin+CoreDataProperties.swift"; path = "../Pin+CoreDataProperties.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,7 +99,12 @@
 			isa = PBXGroup;
 			children = (
 				303B93641E9B4E6900E6D365 /* Model.xcdatamodeld */,
+				303B937A1E9B856600E6D365 /* Photo+CoreDataClass.swift */,
+				303B937B1E9B856600E6D365 /* Photo+CoreDataProperties.swift */,
+				303B937C1E9B856600E6D365 /* Pin+CoreDataClass.swift */,
+				303B937D1E9B856600E6D365 /* Pin+CoreDataProperties.swift */,
 				303B93671E9B4F9B00E6D365 /* WebClient.swift */,
+				303B93781E9B853100E6D365 /* CoreDataStack.swift */,
 				303B93691E9B72E100E6D365 /* Constants.swift */,
 			);
 			name = Model;
@@ -169,12 +184,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				303B93621E9B4C1000E6D365 /* PhotoAlbumVC.swift in Sources */,
+				303B93811E9B856600E6D365 /* Pin+CoreDataProperties.swift in Sources */,
 				303B936C1E9B72F800E6D365 /* Helper.swift in Sources */,
+				303B93801E9B856600E6D365 /* Pin+CoreDataClass.swift in Sources */,
 				303B93511E9B3EFD00E6D365 /* MapVC.swift in Sources */,
 				303B934F1E9B3EFD00E6D365 /* AppDelegate.swift in Sources */,
 				303B93681E9B4F9B00E6D365 /* WebClient.swift in Sources */,
 				303B93661E9B4E6900E6D365 /* Model.xcdatamodeld in Sources */,
+				303B937E1E9B856600E6D365 /* Photo+CoreDataClass.swift in Sources */,
 				303B936A1E9B72E100E6D365 /* Constants.swift in Sources */,
+				303B937F1E9B856600E6D365 /* Photo+CoreDataProperties.swift in Sources */,
+				303B93791E9B853100E6D365 /* CoreDataStack.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
