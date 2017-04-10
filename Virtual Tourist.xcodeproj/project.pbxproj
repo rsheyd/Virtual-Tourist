@@ -8,20 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		303B934F1E9B3EFD00E6D365 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B934E1E9B3EFD00E6D365 /* AppDelegate.swift */; };
-		303B93511E9B3EFD00E6D365 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B93501E9B3EFD00E6D365 /* ViewController.swift */; };
+		303B93511E9B3EFD00E6D365 /* MapVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B93501E9B3EFD00E6D365 /* MapVC.swift */; };
 		303B93541E9B3EFD00E6D365 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 303B93521E9B3EFD00E6D365 /* Main.storyboard */; };
 		303B93561E9B3EFD00E6D365 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 303B93551E9B3EFD00E6D365 /* Assets.xcassets */; };
 		303B93591E9B3EFD00E6D365 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 303B93571E9B3EFD00E6D365 /* LaunchScreen.storyboard */; };
+		303B93621E9B4C1000E6D365 /* PhotoAlbumVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 303B93611E9B4C1000E6D365 /* PhotoAlbumVC.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		303B934B1E9B3EFD00E6D365 /* Virtual Tourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Virtual Tourist.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		303B934E1E9B3EFD00E6D365 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		303B93501E9B3EFD00E6D365 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		303B93501E9B3EFD00E6D365 /* MapVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapVC.swift; sourceTree = "<group>"; };
 		303B93531E9B3EFD00E6D365 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		303B93551E9B3EFD00E6D365 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		303B93581E9B3EFD00E6D365 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		303B935A1E9B3EFD00E6D365 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		303B93611E9B4C1000E6D365 /* PhotoAlbumVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumVC.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,14 +56,23 @@
 		303B934D1E9B3EFD00E6D365 /* Virtual Tourist */ = {
 			isa = PBXGroup;
 			children = (
+				303B93601E9B44E800E6D365 /* View Controllers */,
 				303B934E1E9B3EFD00E6D365 /* AppDelegate.swift */,
-				303B93501E9B3EFD00E6D365 /* ViewController.swift */,
 				303B93521E9B3EFD00E6D365 /* Main.storyboard */,
 				303B93551E9B3EFD00E6D365 /* Assets.xcassets */,
 				303B93571E9B3EFD00E6D365 /* LaunchScreen.storyboard */,
 				303B935A1E9B3EFD00E6D365 /* Info.plist */,
 			);
 			path = "Virtual Tourist";
+			sourceTree = "<group>";
+		};
+		303B93601E9B44E800E6D365 /* View Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				303B93501E9B3EFD00E6D365 /* MapVC.swift */,
+				303B93611E9B4C1000E6D365 /* PhotoAlbumVC.swift */,
+			);
+			name = "View Controllers";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -137,7 +148,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				303B93511E9B3EFD00E6D365 /* ViewController.swift in Sources */,
+				303B93621E9B4C1000E6D365 /* PhotoAlbumVC.swift in Sources */,
+				303B93511E9B3EFD00E6D365 /* MapVC.swift in Sources */,
 				303B934F1E9B3EFD00E6D365 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -304,6 +316,7 @@
 				303B935F1E9B3EFD00E6D365 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
