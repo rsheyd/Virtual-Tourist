@@ -13,11 +13,23 @@ import CoreData
 class MapVC: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
+    var fetchedResultsController: NSFetchedResultsController<NSFetchRequestResult>?
+    var selectedPinLatitude: CLLocationDegrees!
+    var selectedPinLongitude: CLLocationDegrees!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         mapView.delegate = self
+        
+        // Get the stack
+        let delegate = UIApplication.shared.delegate as! AppDelegate
+        let stack = delegate.stack
+        let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Pin")
+        fr.sortDescriptors = [NSSortDescriptor(key: "wasOpened", ascending: true)]
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
+        
         loadLastMapView()
+        loadSavedPins(fr)
         longPressRecognizerSetup()
     }
     
@@ -27,6 +39,37 @@ class MapVC: UIViewController, MKMapViewDelegate {
             let centerCoord = CLLocationCoordinate2DMake(UserDefaults.standard.value(forKey: "mapLatitude") as! CLLocationDegrees, UserDefaults.standard.value(forKey: "mapLongitude") as! CLLocationDegrees)
             let region = MKCoordinateRegionMake(centerCoord, span)
             mapView.setRegion(region, animated: true)
+        }
+    }
+    
+    func loadSavedPins(_ request: NSFetchRequest<NSFetchRequestResult>) {
+        
+        request.returnsObjectsAsFaults = false
+        
+        do {
+            
+            let results = try fetchedResultsController?.managedObjectContext.fetch(request)
+            
+            if results!.count > 0 {
+                
+                for result in results as! [NSManagedObject] {
+                    
+                    guard let pinLatitude = result.value(forKey: "latitude") as? Double, let pinLongitude = result.value(forKey: "longitude") as? Double else {
+                        print("Invalid pin found. Skipping.")
+                        continue
+                    }
+                    
+                    let pin = MKPointAnnotation()
+                    pin.coordinate = CLLocationCoordinate2DMake(pinLatitude, pinLongitude)
+                    mapView.addAnnotation(pin)
+                    
+                }
+            } else {
+                print("No pins could be found in Core Data.")
+            }
+            
+        } catch {
+            print("Request for pin in Core Data could not be processed.")
         }
     }
     
@@ -51,9 +94,62 @@ class MapVC: UIViewController, MKMapViewDelegate {
         let touchMapCoordinate = mapView.convert(touchPoint, toCoordinateFrom: mapView)
         
         
-        let anno = MKPointAnnotation()
-        anno.coordinate = touchMapCoordinate
-        mapView.addAnnotation(anno)
+        let pin = MKPointAnnotation()
+        pin.coordinate = touchMapCoordinate
+        mapView.addAnnotation(pin)
+        
+        let newPin = Pin(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude, wasOpened: false, context: fetchedResultsController!.managedObjectContext)
+        print("just created new pin in core data: \(newPin)")
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier! == "toPhotoAlbum" {
+            
+            if let photoAlbumVC = segue.destination as? PhotoAlbumVC {
+                
+                //do fetch request to get specific pin based on lat and lon
+                let frPins = NSFetchRequest<NSFetchRequestResult>(entityName: "Pin")
+                let predicate = NSPredicate(format: "latitude = %@ AND longitude = %@", argumentArray: [selectedPinLatitude, selectedPinLongitude])
+                frPins.predicate = predicate
+                
+                
+                guard let pins = try? fetchedResultsController?.managedObjectContext.fetch(frPins),
+                    let pin = pins?.first as? Pin else {
+                    print("Pin not found at \(selectedPinLatitude) and \(selectedPinLongitude)")
+                    return
+                }
+                
+                //do another fetch request to get the photos, and use the pin from prevoius request to filter the photos
+                
+                let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+                fr.sortDescriptors = [NSSortDescriptor(key: "imageData", ascending: false)]
+                //"pin" is the relationship name (check the relationship name under "relationships" in Photo entity)
+                let photoPredicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
+                fr.predicate = photoPredicate
+                let photos = try? fetchedResultsController?.managedObjectContext.fetch(fr)
+                let fc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext:fetchedResultsController!.managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
+                
+                // Inject it into the notesVC
+                photoAlbumVC.fetchedResultsController = fc
+                
+                // Inject the notebook too!
+                photoAlbumVC.pin = pin
+                
+                print("photos count = \(String(describing: photos??.count))")
+                
+            }
+        }
+    }
+    
+    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        selectedPinLatitude = view.annotation?.coordinate.latitude
+        selectedPinLongitude = view.annotation?.coordinate.longitude
+        performSegue(withIdentifier: "toPhotoAlbum", sender: self)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
 }
 
