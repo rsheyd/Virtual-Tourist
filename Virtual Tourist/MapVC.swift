@@ -16,6 +16,7 @@ class MapVC: UIViewController, MKMapViewDelegate {
     var fetchedResultsController: NSFetchedResultsController<NSFetchRequestResult>?
     var selectedPinLatitude: CLLocationDegrees!
     var selectedPinLongitude: CLLocationDegrees!
+    let delegate = UIApplication.shared.delegate as! AppDelegate
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -100,6 +101,7 @@ class MapVC: UIViewController, MKMapViewDelegate {
         
         let newPin = Pin(latitude: pin.coordinate.latitude, longitude: pin.coordinate.longitude, wasOpened: false, context: fetchedResultsController!.managedObjectContext)
         print("just created new pin in core data: \(newPin)")
+        delegate.stack.save()
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
@@ -113,8 +115,9 @@ class MapVC: UIViewController, MKMapViewDelegate {
                 frPins.predicate = predicate
                 
                 
-                guard let pins = try? fetchedResultsController?.managedObjectContext.fetch(frPins),
-                    let pin = pins?.first as? Pin else {
+                guard let fetchedResultsController = fetchedResultsController,
+                    let pins = try? fetchedResultsController.managedObjectContext.fetch(frPins),
+                    let pin = pins.first as? Pin else {
                     print("Pin not found at \(selectedPinLatitude) and \(selectedPinLongitude)")
                     return
                 }
@@ -126,22 +129,23 @@ class MapVC: UIViewController, MKMapViewDelegate {
                 //"pin" is the relationship name (check the relationship name under "relationships" in Photo entity)
                 let photoPredicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
                 fr.predicate = photoPredicate
-                let photos = try? fetchedResultsController?.managedObjectContext.fetch(fr)
-                let fc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext:fetchedResultsController!.managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
+                let photos = try? fetchedResultsController.managedObjectContext.fetch(fr)
+                let fc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext:fetchedResultsController.managedObjectContext, sectionNameKeyPath: nil, cacheName: nil)
                 
-                // Inject it into the notesVC
+                // Inject it into the photoAlbumVC
                 photoAlbumVC.fetchedResultsController = fc
                 
-                // Inject the notebook too!
+                // Inject the pin too!
                 photoAlbumVC.pin = pin
                 
-                print("photos count = \(String(describing: photos??.count))")
+                print("photos count = \(String(describing: photos?.count))")
                 
             }
         }
     }
     
     func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        mapView.deselectAnnotation(view.annotation, animated: false)
         selectedPinLatitude = view.annotation?.coordinate.latitude
         selectedPinLongitude = view.annotation?.coordinate.longitude
         performSegue(withIdentifier: "toPhotoAlbum", sender: self)

@@ -5,6 +5,8 @@
 //  Created by Roman Sheydvasser on 4/9/17.
 //  Copyright © 2017 RLabs. All rights reserved.
 //
+// remove photosCount
+
 
 import UIKit
 import CoreData
@@ -15,32 +17,25 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     var fetchedResultsController: NSFetchedResultsController<NSFetchRequestResult>?
     let webClient = WebClient.sharedInstance()
     var photosCount: Int?
-    var photoArray: [UIImage?] = []
+    var photoObjects: [NSManagedObject] = []
+    let delegate = UIApplication.shared.delegate as! AppDelegate
     
     @IBOutlet weak var collectionView: UICollectionView!
     
     @IBOutlet weak var newCollectionButton: UIBarButtonItem!
     
     @IBAction func newCollectionPressed(_ sender: Any) {
-        self.photoArray = []
+        self.photoObjects = []
         self.collectionView.reloadData()
-        downloadImages()
+        deleteSavedImages()
+        downloadNewImages()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Get the stack
-        let delegate = UIApplication.shared.delegate as! AppDelegate
-        let stack = delegate.stack
-        let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
-        fr.sortDescriptors = [NSSortDescriptor(key: "imageData", ascending: true)]
-        fetchedResultsController = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: stack.context, sectionNameKeyPath: nil, cacheName: nil)
-        
-        print("Number of photos in this pin: \(fetchedResultsController?.fetchedObjects?.count as Any)")
-        
-        downloadImages()
-        
+        // Get photos from Core Data
+        getSavedImages()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -52,13 +47,12 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
         
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PhotoCell", for: indexPath) as! PhotoCell
         
-        print("array count:\(photoArray.count), indexpathRow: \(indexPath.row)")
-        
         cell.imageView.image = UIImage(named: "blankImage")
         
-        if photoArray.count > indexPath.row {
-            if let photo = photoArray[indexPath.row] {
-                cell.imageView.image = photo
+        if photoObjects.count > indexPath.row {
+            
+            if let imageData = photoObjects[indexPath.row].value(forKey: "imageData") as? Data {
+                cell.imageView.image = UIImage(data: imageData)
             } else {
                 cell.imageView.image = UIImage(named: "blankImage")
             }
@@ -68,9 +62,7 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if let count = fetchedResultsController?.fetchedObjects?.count {
-            return count
-        } else if let count = photosCount, count > 20 {
+        if let count = photosCount, count >= 20 {
             return 20
         } else if let count = photosCount, count < 20 {
             return count
@@ -79,7 +71,51 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
         }
     }
     
-    func downloadImages() {
+    func getPhotosFromCoreData() -> [NSManagedObject]? {
+        guard let pin = pin, let fetchedResultsController = fetchedResultsController else {
+            print("Photo album segue performed without Pin or FetchedResultsController objects.")
+            return nil
+        }
+        
+        let fr = NSFetchRequest<NSFetchRequestResult>(entityName: "Photo")
+        fr.sortDescriptors = [NSSortDescriptor(key: "imageData", ascending: true)]
+        let photoPredicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
+        fr.predicate = photoPredicate
+        fr.returnsObjectsAsFaults = false
+        
+        do {
+            let results = try fetchedResultsController.managedObjectContext.fetch(fr) as? [NSManagedObject]
+            return results
+        } catch {
+            print("Request for photos in Core Data could not be processed.")
+        }
+        
+        return nil
+    }
+    
+    func getSavedImages() {
+        
+        guard let photos = getPhotosFromCoreData() else {
+            print("Could not retrieve photos from Core Data.")
+            return
+        }
+        
+            print("photoalbum photos count = \(String(describing: photos.count))")
+            
+            if photos.count > 0 {
+                for photo in photos {
+                    photoObjects.append(photo)
+                }
+            } else {
+                print("No photos could be found in Core Data.")
+                downloadNewImages()
+            }
+        
+        photosCount = photoObjects.count
+        collectionView.reloadData()
+    }
+    
+    func downloadNewImages() {
     
         let flickrUrl = webClient.getFlickrUrl(latitude: pin?.latitude, longitude: pin?.longitude)
         print(flickrUrl)
@@ -150,12 +186,11 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
                     // if an image exists at the url, set the image and title
                     let imageURL = URL(string: imageUrlString)
                     if let imageData = try? Data(contentsOf: imageURL!) {
-                        if let image = (UIImage(data: imageData)) {
-                            self.photoArray.append(image)
-                            
-                            self.saveToCoreData(imageData as NSData)
+                        if let _ = (UIImage(data: imageData)) {
                             
                             DispatchQueue.main.async {
+                                self.saveToCoreData(imageData as NSData)
+                                print("photo = \(photo), photoObjects.count = \(self.photoObjects.count)")
                                 self.collectionView.reloadItems(at: [IndexPath(item: photo-1, section: 0)])
                             }
                         }
@@ -168,15 +203,39 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        photoArray.remove(at: indexPath.row)
+        print(photoObjects.count)
+        if photoObjects.count > 0 {
+            fetchedResultsController?.managedObjectContext.delete(photoObjects[indexPath.row])
+            photoObjects.remove(at: indexPath.row)
+            photosCount = photosCount! - 1
+        }
+        print(photoObjects.count)
         self.collectionView.reloadData()
     }
     
     func saveToCoreData(_ imageData: NSData) {
-        if let pin = pin, let context = fetchedResultsController?.managedObjectContext {
+        if let pin = pin, let fc = fetchedResultsController {
             print("Saving photo to Core Data")
-            let photo = Photo(imageData: imageData, context: context)
+            let photo = Photo(imageData: imageData, context: fc.managedObjectContext)
             photo.pin = pin
+            photoObjects.append(photo)
         }
+    }
+    
+    func deleteSavedImages() {
+        guard let photos = getPhotosFromCoreData(),
+            let context = fetchedResultsController?.managedObjectContext else {
+            print("Could not retrieve photos from Core Data or core data context.")
+            return
+        }
+        
+        for photo in photos {
+            context.delete(photo)
+        }
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        delegate.stack.save()
     }
 }

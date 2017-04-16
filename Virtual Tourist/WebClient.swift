@@ -17,22 +17,6 @@ class WebClient: NSObject {
     
     // MARK: Functions
     
-    func logoutTaskViaHttp(completionHandlerForRequest: @escaping (_ jsonData: Data?, _ errorString: String?) -> Void) {
-        
-        let request = NSMutableURLRequest(url: URL(string: Constants.sessionMethod)!)
-        request.httpMethod = "DELETE"
-        var xsrfCookie: HTTPCookie? = nil
-        let sharedCookieStorage = HTTPCookieStorage.shared
-        for cookie in sharedCookieStorage.cookies! {
-            if cookie.name == "XSRF-TOKEN" { xsrfCookie = cookie }
-        }
-        if let xsrfCookie = xsrfCookie {
-            request.setValue(xsrfCookie.value, forHTTPHeaderField: "X-XSRF-TOKEN")
-        }
-        
-        taskWithHttpRequest(request, completionHandlerForTask: completionHandlerForRequest)
-    }
-    
     func taskViaHttp(url: String, httpMethod: String, httpHeaders: [String:String]?, httpBody: String?, completionHandlerForRequest: @escaping (_ jsonData: Data?, _ errorString: String?) -> Void) {
         
         let request = NSMutableURLRequest(url: URL(string: url)!)
