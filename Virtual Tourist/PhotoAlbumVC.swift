@@ -33,7 +33,6 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         // Get photos from Core Data
         getSavedImages()
     }
@@ -41,6 +40,11 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(false, animated: true)
+    }
+    
+    func enableUI(_ enabled: Bool) {
+        navigationItem.hidesBackButton = !enabled
+        newCollectionButton.isEnabled = enabled
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -81,9 +85,10 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
         fr.sortDescriptors = [NSSortDescriptor(key: "imageData", ascending: true)]
         let photoPredicate = NSPredicate(format: "pin = %@", argumentArray: [pin])
         fr.predicate = photoPredicate
-        fr.returnsObjectsAsFaults = false
+        //fr.returnsObjectsAsFaults = false
         
         do {
+            //crash occurs here if I try to get a new collection of images
             let results = try fetchedResultsController.managedObjectContext.fetch(fr) as? [NSManagedObject]
             return results
         } catch {
@@ -109,13 +114,17 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
             } else {
                 print("No photos could be found in Core Data.")
                 downloadNewImages()
+                return
             }
         
         photosCount = photoObjects.count
         collectionView.reloadData()
+        enableUI(true)
     }
     
     func downloadNewImages() {
+        
+        enableUI(false)
     
         let flickrUrl = webClient.getFlickrUrl(latitude: pin?.latitude, longitude: pin?.longitude)
         print(flickrUrl)
@@ -185,18 +194,27 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
                     
                     // if an image exists at the url, set the image and title
                     let imageURL = URL(string: imageUrlString)
-                    if let imageData = try? Data(contentsOf: imageURL!) {
-                        if let _ = (UIImage(data: imageData)) {
-                            
-                            DispatchQueue.main.async {
-                                self.saveToCoreData(imageData as NSData)
-                                print("photo = \(photo), photoObjects.count = \(self.photoObjects.count)")
-                                self.collectionView.reloadItems(at: [IndexPath(item: photo-1, section: 0)])
-                            }
+                    
+                    
+                    do {
+                        let imageData = try Data(contentsOf: imageURL!)
+                        DispatchQueue.main.async {
+                            self.saveToCoreData(imageData as NSData)
+                            print("photo = \(photo), photoObjects.count = \(self.photoObjects.count)")
+                            self.collectionView.reloadItems(at: [IndexPath(item: photo-1, section: 0)])
                         }
-                    } else {
-                        print("Image does not exist at \(imageUrlString)")
+                    } catch {
+                        print("Download operation failed.")
                     }
+                    
+                    if photo == maxPhotos {
+                        DispatchQueue.main.async {
+                            self.enableUI(true)
+                        }
+                    }
+                    
+                    //This seems to have fixed the crash that used to occur if I pressed new collection. I guess running the query on an unsaved context makes it crash? I tried to figure out a way to make it thread-safe but I couldn't.
+                    self.delegate.stack.save()
                 }
             }
         }
@@ -223,7 +241,7 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     }
     
     func deleteSavedImages() {
-        guard let photos = getPhotosFromCoreData(),
+        guard let photos = getPhotosFromCoreData() as? [Photo],
             let context = fetchedResultsController?.managedObjectContext else {
             print("Could not retrieve photos from Core Data or core data context.")
             return

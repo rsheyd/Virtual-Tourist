@@ -60,7 +60,7 @@
                                 <rect key="frame" x="0.0" y="623" width="375" height="44"/>
                                 <items>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="qgA-N8-bFb"/>
-                                    <barButtonItem title="New Collection" id="buK-qC-RuL">
+                                    <barButtonItem enabled="NO" title="New Collection" id="buK-qC-RuL">
                                         <connections>
                                             <action selector="newCollectionPressed:" destination="IyZ-ol-Xi8" id="4yq-1A-dcH"/>
                                         </connections>
