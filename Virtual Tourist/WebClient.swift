@@ -33,7 +33,7 @@ class WebClient: NSObject {
             
         let task = session.dataTask(with: request as URLRequest) { data, response, error in
             guard let data = data else {
-                Helper.displayAlertOnMain("Data was not returned.")
+                completionHandlerForTask(nil,"Data was not returned.")
                 return
             }
             

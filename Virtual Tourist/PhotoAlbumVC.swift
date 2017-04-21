@@ -16,7 +16,7 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     var pin: Pin?
     var fetchedResultsController: NSFetchedResultsController<NSFetchRequestResult>?
     let webClient = WebClient.sharedInstance()
-    var photosCount: Int?
+    var photosCount = 0
     var photoObjects: [NSManagedObject] = []
     let delegate = UIApplication.shared.delegate as! AppDelegate
     
@@ -66,13 +66,7 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if let count = photosCount, count >= 20 {
-            return 20
-        } else if let count = photosCount, count < 20 {
-            return count
-        } else {
-            return 0
-        }
+        return photosCount
     }
     
     func getPhotosFromCoreData() -> [NSManagedObject]? {
@@ -105,17 +99,17 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
             return
         }
         
-            print("photoalbum photos count = \(String(describing: photos.count))")
-            
-            if photos.count > 0 {
-                for photo in photos {
-                    photoObjects.append(photo)
-                }
-            } else {
-                print("No photos could be found in Core Data.")
-                downloadNewImages()
-                return
+        print("photoalbum photos count = \(String(describing: photos.count))")
+        
+        if photos.count > 0 {
+            for photo in photos {
+                photoObjects.append(photo)
             }
+        } else {
+            print("No photos could be found in Core Data.")
+            downloadNewImages()
+            return
+        }
         
         photosCount = photoObjects.count
         collectionView.reloadData()
@@ -126,97 +120,50 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
         
         enableUI(false)
     
-        let flickrUrl = webClient.getFlickrUrl(latitude: pin?.latitude, longitude: pin?.longitude)
+        let flickrUrl = webClient.createFlickrUrl(latitude: pin?.latitude, longitude: pin?.longitude)
         print(flickrUrl)
         
-        webClient.taskViaHttp(url: flickrUrl, httpMethod: "GET", httpHeaders: nil, httpBody: nil) { (jsonData, error) in
+        webClient.getFlickrPhotoUrls(flickrUrl: flickrUrl) { (photoUrls, error) in
             
             if let error = error {
-                print("Error getting flickr results: \(error)")
-                return
-            }
-            
-            guard let jsonData = jsonData else {
-                print("No data returned when getting flickr results.")
-                return
-            }
-            
-            guard let parsedResult = self.webClient.parseJsonData(data: jsonData, isUdacityApi: false) else {
-                print("Returned data could not be parsed: \(jsonData)")
-                return
-            }
-            
-            /* GUARD: Did Flickr return an error (stat != ok)? */
-            guard let stat = parsedResult["stat"] as? String, stat == "ok" else {
-                print("Flickr API returned an error. See error code and message in \(parsedResult)")
-                return
-            }
-            
-            /* GUARD: Is the "photos" key in our result? */
-            guard let photosDictionary = parsedResult["photos"] as? [String:AnyObject] else {
-                print("Cannot find key 'photos' in \(parsedResult)")
-                return
-            }
-            
-            guard let photosArray = photosDictionary["photo"] as? [[String: AnyObject]] else {
-                print("Cannot find key 'photo' in \(photosDictionary)")
-                return
-            }
-            
-            if photosArray.count == 0 {
-                print("No Photos Found. Search Again.")
-                return
-            } else {
-                
+                Helper.displayAlertOnMain(error)
                 DispatchQueue.main.async {
-                    self.photosCount = photosArray.count
-                    self.collectionView.reloadData()
+                    self.enableUI(true)
                 }
-                
-                let maxPhotos = min(20, photosArray.count)
-                var photosUsed: [Int] = []
-                
-                for photo in 1...maxPhotos {
-                    
-                    var randomPhotoIndex = Int(arc4random_uniform(UInt32(photosArray.count)))
-                    while photosUsed.contains(randomPhotoIndex) {
-                        randomPhotoIndex = Int(arc4random_uniform(UInt32(photosArray.count)))
+                return
+            }
+            
+            guard let photoUrls = photoUrls else {
+                Helper.displayAlertOnMain("Error getting flickr results.")
+                DispatchQueue.main.async {
+                    self.enableUI(true)
+                }
+                return
+            }
+            
+            DispatchQueue.main.async {
+                self.photosCount = photoUrls.count
+                self.collectionView.reloadData()
+            }
+            
+            var urlIndex = 1
+            
+            for url in photoUrls {
+                self.webClient.downloadImage(url) { (imageData) in
+                    DispatchQueue.main.async {
+                        self.saveToCoreData(imageData)
+                        print("photo = \(urlIndex), photoObjects.count = \(self.photoObjects.count)")
+                        self.collectionView.reloadItems(at: [IndexPath(item: urlIndex-1, section: 0)])
+                        urlIndex = urlIndex + 1
                     }
-                    
-                    photosUsed.append(randomPhotoIndex)
-                    let photoDictionary = photosArray[randomPhotoIndex] as [String: AnyObject]
-                    
-                    /* GUARD: Does our photo have a key for 'url_m'? */
-                    guard let imageUrlString = photoDictionary["url_m"] as? String else {
-                        print("Cannot find key 'url_m' in \(photoDictionary)")
-                        return
-                    }
-                    
-                    // if an image exists at the url, set the image and title
-                    let imageURL = URL(string: imageUrlString)
-                    
-                    
-                    do {
-                        let imageData = try Data(contentsOf: imageURL!)
-                        DispatchQueue.main.async {
-                            self.saveToCoreData(imageData as NSData)
-                            print("photo = \(photo), photoObjects.count = \(self.photoObjects.count)")
-                            self.collectionView.reloadItems(at: [IndexPath(item: photo-1, section: 0)])
-                        }
-                    } catch {
-                        print("Download operation failed.")
-                    }
-                    
-                    if photo == maxPhotos {
-                        DispatchQueue.main.async {
-                            self.enableUI(true)
-                        }
-                    }
-                    
-                    //This seems to have fixed the crash that used to occur if I pressed new collection. I guess running the query on an unsaved context makes it crash? I tried to figure out a way to make it thread-safe but I couldn't.
-                    self.delegate.stack.save()
                 }
             }
+            
+            DispatchQueue.main.async {
+                self.enableUI(true)
+            }
+            
+            self.delegate.stack.save()
         }
     }
     
@@ -225,9 +172,10 @@ class PhotoAlbumVC: UIViewController, UICollectionViewDelegate, UICollectionView
         if photoObjects.count > 0 {
             fetchedResultsController?.managedObjectContext.delete(photoObjects[indexPath.row])
             photoObjects.remove(at: indexPath.row)
-            photosCount = photosCount! - 1
+            photosCount = photosCount - 1
         }
         print(photoObjects.count)
+        self.delegate.stack.save()
         self.collectionView.reloadData()
     }
     
